@@ -683,6 +683,7 @@ window.addEventListener('keydown', (e) => {
   if (e.code === 'Enter' || e.code === 'KeyZ' || e.code === 'Space' || e.code === 'KeyJ') input.tap = true;
   if ((e.code === 'KeyX' || e.code === 'KeyK') && !e.repeat) input.bomb = true;
   if ((e.code === 'KeyP' || e.code === 'Escape') && !e.repeat) togglePause();
+  if (G.dev && !e.repeat) devKey(e.code);
 });
 window.addEventListener('keyup', (e) => { const k = KEYMAP[e.code]; if (k) input.keys[k] = false; });
 
@@ -923,7 +924,7 @@ function canFire(e) { return P.alive && e.y > 4 && e.y < P.y - 36 && e.x > 4 && 
 
 function addScore(v) {
   G.score += v;
-  if (G.score > G.hi) G.hi = G.score;
+  if (G.score > G.hi && !G.devUsed) G.hi = G.score;      // dev-assisted runs never set a high score
   while (G.score >= G.nextExtend) {
     G.nextExtend += G.nextExtend < 200000 ? 150000 : 250000;
     G.lives = Math.min(G.lives + 1, 9);
@@ -1171,7 +1172,7 @@ function firePlayer() {
   SFX.shot();
 }
 function killPlayer() {
-  if (!P.alive || P.inv > 0) return;
+  if (!P.alive || P.inv > 0 || G.god) return;
   P.alive = false; P.respawnT = 1.6;
   explode(P.x, P.y, 1.6, 6, 12); spark(P.x, P.y, 30, 140, 0, 3, true);
   G.shake = 0.5; SFX.die();
@@ -1660,7 +1661,7 @@ function gotoState(s) {
 }
 function clearField() { enemies.clear(); pshots.clear(); ebullets.clear(); explos.clear(); parts.clear(); items.clear(); popups.clear(); }
 function newGame() {
-  G.score = 0; G.lives = 3; G.bombs = 3; G.stage = 0; G.loop = 0; G.nextExtend = 100000; G.medalIdx = 0;
+  G.score = 0; G.lives = 3; G.bombs = 3; G.stage = 0; G.loop = 0; G.nextExtend = 100000; G.medalIdx = 0; G.devUsed = !!G.god;
   resetPlayer(true);
   startStage(0);
 }
@@ -1767,6 +1768,7 @@ function drawHUD() {
   text('HI', W / 2 - 6, 3, 'y'); text(String(G.hi), W / 2 + 8, 3, 'w');
   for (let i = 0; i < Math.min(G.lives - 1, 6); i++) ctx.drawImage(SPR.playerIcon, 4 + i * 13, H - 22);
   for (let i = 0; i < Math.min(G.bombs, 8); i++) ctx.drawImage(SPR.bombIcon, 4 + i * 8, H - 12);
+  if (G.god) text('GOD', 4, H - 32, 'n');
   const b = G.boss;
   if (b && !b.dying) {
     const w = 150, x0 = (W - w) >> 1, f = b.enter ? Math.min(1, b.t / 2) : b.hp / b.max;
@@ -1901,7 +1903,97 @@ function boot() {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }
 }
-// debug/test hooks (harmless in production)
-window.__SKY = { G, P, startStage: (i) => startStage(i), spawnBoss: () => { G.bossState = 1; spawnBoss(); }, item: (t) => dropItem(t, P.x, P.y - 30), bomb: () => useBomb() };
+// =====================================================================
+// 14. DEVELOPER MODE (owner only)
+// Open the game with  #dev=<password>  once; it is remembered on that device.
+// #dev=off turns it off. Only the SHA-256 of the password is stored in this file.
+// =====================================================================
+const DEV_HASH = '6fcdca4e463f91ca82d7fe52144d45fff3bfd2ecc512d4ffe558d6a77db6975f';
+const DEV_KEY = 'skyace1944_dev';
+// small pure-JS SHA-256 (crypto.subtle is unavailable on plain-http LAN addresses)
+function sha256(str) {
+  const K = [], H0 = [];
+  for (let c = 2, n = 0; n < 64; c++) {
+    let prime = true; for (let d = 2; d * d <= c; d++) if (c % d === 0) { prime = false; break; }
+    if (prime) { if (n < 8) H0[n] = (Math.pow(c, 1 / 2) * 4294967296) | 0; K[n++] = (Math.pow(c, 1 / 3) * 4294967296) | 0; }
+  }
+  const bytes = new TextEncoder().encode(str), l = bytes.length;
+  const buf = new Uint8Array(((l + 9 + 63) >> 6) << 6); buf.set(bytes); buf[l] = 0x80;
+  const dv = new DataView(buf.buffer);
+  dv.setUint32(buf.length - 8, Math.floor(l / 536870912)); dv.setUint32(buf.length - 4, (l * 8) >>> 0);
+  let h = H0.slice(); const w = new Int32Array(64);
+  const rot = (x, n) => (x >>> n) | (x << (32 - n));
+  for (let i = 0; i < buf.length; i += 64) {
+    for (let j = 0; j < 16; j++) w[j] = dv.getInt32(i + j * 4);
+    for (let j = 16; j < 64; j++) {
+      const a = w[j - 15], b = w[j - 2];
+      w[j] = (w[j - 16] + (rot(a, 7) ^ rot(a, 18) ^ (a >>> 3)) + w[j - 7] + (rot(b, 17) ^ rot(b, 19) ^ (b >>> 10))) | 0;
+    }
+    let [a, b, c, d, e, f, g, hh] = h;
+    for (let j = 0; j < 64; j++) {
+      const t1 = (hh + (rot(e, 6) ^ rot(e, 11) ^ rot(e, 25)) + ((e & f) ^ (~e & g)) + K[j] + w[j]) | 0;
+      const t2 = ((rot(a, 2) ^ rot(a, 13) ^ rot(a, 22)) + ((a & b) ^ (a & c) ^ (b & c))) | 0;
+      hh = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
+    }
+    h = [a, b, c, d, e, f, g, hh].map((v, k) => (v + h[k]) | 0);
+  }
+  return h.map((v) => (v >>> 0).toString(16).padStart(8, '0')).join('');
+}
+function checkDev() {
+  let pw = null;
+  const m = /[#&]dev=([^&]*)/.exec(location.hash);
+  if (m) {
+    try { pw = decodeURIComponent(m[1]); } catch (e) { pw = m[1]; }
+    history.replaceState(null, '', location.pathname + location.search);   // don't leave the password in the address bar
+    if (pw === 'off') { try { localStorage.removeItem(DEV_KEY); } catch (e) { /* ignore */ } return; }
+  } else {
+    try { pw = localStorage.getItem(DEV_KEY); } catch (e) { pw = null; }
+  }
+  if (!pw || sha256(pw) !== DEV_HASH) return;
+  try { localStorage.setItem(DEV_KEY, pw); } catch (e) { /* ignore */ }
+  enableDev();
+}
+function devStage(i) {
+  if (G.state === 'title') newGame();
+  if (G.lives <= 0) G.lives = 3;
+  G.paused = false; startStage(i); G.devUsed = true;
+}
+function devBoss() {
+  if ((G.state !== 'play' && G.state !== 'warning') || G.bossState) return;
+  G.devUsed = true; enemies.clear(); ebullets.clear();
+  const sc = SCRIPTS[G.stage]; G.scriptI = sc.length; G.stageT = Math.max(G.stageT, sc[sc.length - 1][0] + 5);
+}
+function devGod() { G.god = !G.god; if (G.god) G.devUsed = true; devRefresh(); }
+function devMax() { if (G.state === 'title') return; P.level = 4; G.bombs = 6; G.devUsed = true; }
+function devKey(code) {
+  const d = { Digit1: 0, Digit2: 1, Digit3: 2, Digit4: 3 }[code];
+  if (d !== undefined && d < STAGES.length) devStage(d);
+  else if (code === 'KeyI') devGod(); else if (code === 'KeyK') devBoss(); else if (code === 'KeyM') devMax();
+}
+let devRefresh = () => {};
+function enableDev() {
+  G.dev = true;
+  window.__SKY = { G, P, startStage: (i) => startStage(i), spawnBoss: () => { G.bossState = 1; spawnBoss(); }, item: (t) => dropItem(t, P.x, P.y - 30), bomb: () => useBomb() };
+  const st = document.createElement('style');
+  st.textContent = '#devPanel{position:absolute;z-index:5;right:calc(env(safe-area-inset-right,0px) + 52px);top:calc(env(safe-area-inset-top,0px) + 8px);display:flex;justify-content:flex-end;flex-wrap:wrap;gap:4px;max-width:190px}'
+    + '#devPanel button{font:bold 11px monospace;padding:7px 8px;border-radius:6px;border:1px solid #ffd84a;background:rgba(0,0,0,.6);color:#ffd84a;touch-action:none;-webkit-user-select:none;user-select:none}'
+    + '#devPanel button.on{background:#ffd84a;color:#000}#devPanel.closed button:not(:first-child){display:none}';
+  document.head.appendChild(st);
+  const panel = document.createElement('div'); panel.id = 'devPanel'; panel.className = 'closed';
+  const add = (label, fn) => {
+    const b = document.createElement('button'); b.textContent = label;
+    b.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); unlockAudio(); fn(b); });
+    panel.appendChild(b); return b;
+  };
+  add('DEV', () => panel.classList.toggle('closed'));
+  const fold = (fn) => () => { fn(); panel.classList.add('closed'); };     // fold away after use
+  STAGES.forEach((_, i) => add('ST' + (i + 1), fold(() => devStage(i))));
+  const godBtn = add('GOD', devGod);
+  add('BOSS', fold(devBoss));
+  add('MAX', fold(devMax));
+  devRefresh = () => godBtn.classList.toggle('on', !!G.god);
+  document.body.appendChild(panel);
+}
+checkDev();
 boot();
 })();
