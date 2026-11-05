@@ -1204,7 +1204,7 @@ function updateBomb(dt) {
       e.hp -= 6; e.flash = 0.05; if (e.hp <= 0) killEnemy(e);
     }
     const b = G.boss;
-    if (b && !b.enter && !b.dying) for (const p of b.parts) if (p.alive) bossHit(b, p, 2);
+    if (b && !b.enter && !b.dying) for (const p of b.parts) if (p.alive) bossHit(b, p, 4);
   }
   if (G.bombT > 0.5 && Math.random() < 0.7) {
     const e = explos.get();
@@ -1362,7 +1362,7 @@ function shotVsBoss(s) {
       return;
     }
   }
-  if (Math.abs(s.x - b.x) < b.hw && Math.abs(s.y - b.y) < b.hh) { s.alive = false; if (Math.random() < 0.25) spark(s.x, s.y + 3, 1, 40, 4, 4, false); }
+  // shots fly over the hull/body itself — only the parts (turrets, engines, core) take damage
 }
 function drawBoss(b, shadow) {
   if (shadow) { blit(b.img.s, b.x + 22, b.y + 34); return; }

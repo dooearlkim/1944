@@ -1,6 +1,6 @@
 // SKY ACE 1944 service worker — offline cache, stale-while-revalidate.
 // Bump VERSION when you deploy a new build.
-const VERSION = 'skyace-v2';
+const VERSION = 'skyace-v3';
 const ASSETS = ['./', './index.html', './game.js', './manifest.json',
   './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png'];
 
