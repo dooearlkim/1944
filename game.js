@@ -255,6 +255,18 @@ function buildSprites() {
     { img: ball(3.5, '#ff7a10', '#ffd060'), r: 3 },   // 1 orange medium
     { img: ball(2.5, '#2a8aff', '#9ad8ff'), r: 2 },   // 2 blue small
     { img: ball(5, '#b03aff', '#e0a0ff'), r: 4 },     // 3 purple large
+    { img: (() => {                                    // 4 tennis ball
+      const [c, g] = mk(11, 11);
+      for (let y = 0; y < 11; y++) for (let x = 0; x < 11; x++) {
+        const d = Math.hypot(x - 5, y - 5);
+        if (d <= 3.9) {
+          const seam = Math.abs(Math.hypot(x - 0.5, y - 5.5) - 4.3) < 0.6 || Math.abs(Math.hypot(x - 9.5, y - 4.5) - 4.3) < 0.6;
+          g.fillStyle = seam ? '#ffffff' : (x + y < 8 ? '#f0ff80' : '#c8e030');
+        } else if (d <= 5) g.fillStyle = '#203000'; else continue;
+        g.fillRect(x, y, 1, 1);
+      }
+      return c;
+    })(), r: 3 },
   ];
 
   // EXPLOSION frames (8 x 32px)
@@ -339,6 +351,13 @@ function buildSprites() {
     return c;
   };
   SPR.barS = barrel(7, 2); SPR.barB = barrel(11, 4); SPR.barH = barrel(24, 6);
+  SPR.barT = (() => {      // ball-machine launch tube with orange mouth
+    const [c, g] = mk(22, 8);
+    g.fillStyle = '#15171c'; g.fillRect(0, 0, 22, 8);
+    g.fillStyle = '#5a606a'; g.fillRect(0, 1, 18, 6); g.fillStyle = '#8a909a'; g.fillRect(0, 2, 18, 1);
+    g.fillStyle = '#ff8a20'; g.fillRect(18, 0, 4, 8); g.fillStyle = '#15171c'; g.fillRect(20, 2, 2, 4);
+    return c;
+  })();
   SPR.ship = bundle(paint(20, 62, (g) => {
     g.fillStyle = '#5c6470';
     g.beginPath(); g.moveTo(10, 0); g.quadraticCurveTo(20, 10, 19, 22); g.lineTo(19, 52); g.quadraticCurveTo(19, 61, 10, 61); g.quadraticCurveTo(1, 61, 1, 52); g.lineTo(1, 22); g.quadraticCurveTo(0, 10, 10, 0); g.fill();
@@ -416,6 +435,20 @@ function buildSprites() {
       g.fillStyle = '#6a3a2a'; g.fillRect(8, 182, 28, 16); g.fillStyle = '#8a5a3a'; g.fillRect(8, 182, 28, 2);
       g.fillStyle = '#222222'; g.fillRect(20, 44, 4, 4); g.fillRect(20, 130, 4, 4);
     })),
+    bundle(paint(70, 92, (g) => {        // TENNIS BALL MACHINE "DEUCE"
+      g.fillStyle = '#1a1a1a'; for (const [x, y] of [[0, 30], [64, 30], [0, 68], [64, 68]]) g.fillRect(x, y, 6, 16);
+      g.fillStyle = '#3a3a3a'; for (const [x, y] of [[0, 30], [64, 30], [0, 68], [64, 68]]) for (let k = 2; k < 16; k += 4) g.fillRect(x, y + k, 6, 1);
+      g.fillStyle = '#246a5c'; g.fillRect(6, 26, 58, 62);
+      g.fillStyle = '#3a8a78'; g.fillRect(6, 26, 58, 3); g.fillRect(6, 26, 3, 62);
+      g.fillStyle = '#1a4a40'; g.fillRect(6, 85, 58, 3); g.fillRect(61, 26, 3, 62);
+      g.fillStyle = '#7a828c'; g.beginPath(); g.moveTo(8, 0); g.lineTo(62, 0); g.lineTo(56, 30); g.lineTo(14, 30); g.closePath(); g.fill();
+      g.fillStyle = '#a4acb6'; g.fillRect(9, 0, 52, 2);
+      g.fillStyle = '#163a32'; for (let i = 0; i < 6; i++) g.fillRect(14 + i * 8, 33, 4, 5);
+      g.fillStyle = '#ffd040'; g.fillRect(10, 57, 50, 3);
+      g.fillStyle = '#e8f0e8'; for (let i = 0; i < 5; i++) g.fillRect(12 + i * 10, 62, 6, 2);
+      g.fillStyle = '#2e3238'; g.beginPath(); g.arc(35, 74, 12, 0, TAU); g.fill();
+      g.fillStyle = '#2e3238'; g.beginPath(); g.arc(12, 47, 7, 0, TAU); g.arc(58, 47, 7, 0, TAU); g.fill();
+    })),
   ];
   SPR.core = {
     C: bundle(paint(14, 18, (g) => {
@@ -426,6 +459,21 @@ function buildSprites() {
     C2: bundle(paint(12, 10, (g) => {
       g.fillStyle = '#3aa8d8'; g.beginPath(); g.ellipse(6, 5, 6, 5, 0, 0, TAU); g.fill();
       g.fillStyle = '#c8f8ff'; g.fillRect(3, 2, 3, 2);
+    })),
+    C4: bundle(paint(18, 12, (g) => {       // control panel
+      g.fillStyle = '#c8ccd0'; g.fillRect(0, 0, 18, 12); g.fillStyle = '#e8ecf0'; g.fillRect(0, 0, 18, 1);
+      g.fillStyle = '#20242a'; g.beginPath(); g.arc(4, 5, 2.5, 0, TAU); g.arc(10, 5, 2.5, 0, TAU); g.fill();
+      g.fillStyle = '#7cf07c'; g.fillRect(4, 4, 1, 2); g.fillRect(10, 5, 2, 1);
+      g.fillStyle = '#e83c2c'; g.fillRect(14, 3, 3, 3); g.fillStyle = '#ffd040'; g.fillRect(2, 9, 14, 1);
+    })),
+    C5: bundle(paint(32, 20, (g) => {       // hopper full of tennis balls
+      g.fillStyle = '#2a2e34'; g.fillRect(0, 0, 32, 20);
+      for (let i = 0; i < 18; i++) {
+        const x = 4 + (i % 6) * 4.8 + (((i / 6) | 0) % 2) * 2, y = 4 + ((i / 6) | 0) * 5.5;
+        g.fillStyle = '#9ab020'; g.beginPath(); g.arc(x + 0.5, y + 0.5, 2.9, 0, TAU); g.fill();
+        g.fillStyle = '#d8f040'; g.beginPath(); g.arc(x, y, 2.5, 0, TAU); g.fill();
+        g.fillStyle = '#ffffff'; g.fillRect(x - 1, y - 1, 1, 1);
+      }
     })),
     C3: bundle(paint(16, 16, (g) => {
       g.fillStyle = '#7a4a30'; g.fillRect(0, 0, 16, 16); g.fillStyle = '#9a6a48'; g.fillRect(0, 0, 16, 2);
@@ -466,10 +514,10 @@ const P = { x: 120, y: 280, alive: true, inv: 0, level: 1, fireT: 0, respawnT: 0
 try { G.hi = parseInt(localStorage.getItem('skyace1944_hi') || '0', 10) || 0; } catch (e) { G.hi = 0; }
 function saveHi() { try { localStorage.setItem('skyace1944_hi', String(G.hi)); } catch (e) { /* ignore */ } }
 // Difficulty ramps up *within* each stage: easy start -> harder before the boss.
-// stage 1: 0.55 -> 0.90, stage 2: 0.78 -> 1.13, stage 3: 1.00 -> 1.35, loop 2+: +0.35
+// stage 1: 0.55 -> 0.90, stage 2: 0.78 -> 1.13, stage 3: 1.00 -> 1.35, stage 4: 1.10 -> 1.45, loop 2+: +0.35
 function diff() {
   const prog = G.bossState ? 1 : clamp(G.stageT / 70, 0, 1);
-  return 0.55 + G.stage * 0.225 + 0.35 * prog + G.loop * 0.35;
+  return 0.55 + Math.min(G.stage, 2) * 0.225 + Math.max(0, G.stage - 2) * 0.1 + 0.35 * prog + G.loop * 0.35;
 }
 const firstRun = () => G.stage === 0 && G.loop === 0;
 const grace = () => firstRun() && G.stageT < 20;      // stage 1 opening: fighters hold fire
@@ -506,7 +554,7 @@ const SFX = (() => {
     clear: { bpm: 150, once: true, lead: S('C5 - E5 - G5 - C6 - - - G5 - C6 - - - - - - - . . . .'), bass: S('M48 - - - M43 - - - M48 - - - M36 - - - - - - - . . . .'), drum: 'k...k...k.k.s...s.......', wave: 'square', tr: 0 },
     over: { bpm: 96, once: true, lead: S('E5 - D5 - C5 - A4 - - - G#4 - - - A4 - - - - - - -'), bass: S('M45 - - - M41 - - - M40 - - - M33 - - - - - - - . .'), drum: '', wave: 'triangle', tr: 0 },
   };
-  const STAGE_TR = [0, 2, -2], STAGE_BPM = [144, 150, 156];
+  const STAGE_TR = [0, 2, -2, 5], STAGE_BPM = [144, 150, 156, 162];
 
   function init() {
     const AC = window.AudioContext || window.webkitAudioContext;
@@ -567,7 +615,7 @@ const SFX = (() => {
     if (!name) { song = null; return; }
     const base = SONGS[name];
     song = Object.assign({}, base);
-    if (name === 'stage') { song.tr = STAGE_TR[G.stage % 3]; song.bpm = STAGE_BPM[G.stage % 3] + G.loop * 8; }
+    if (name === 'stage') { song.tr = STAGE_TR[G.stage % 4]; song.bpm = STAGE_BPM[G.stage % 4] + G.loop * 8; }
     step = 0; nextT = ac ? ac.currentTime + 0.05 : 0;
   }
   const api = {
@@ -595,6 +643,7 @@ const SFX = (() => {
     extend() { if (ok()) { const t = ac.currentTime; [0, 7, 12, 7, 12, 19].forEach((s, i) => tone('square', hz(76 + s), 0, 0.1, 0.13, t + i * 0.08)); } },
     warn() { if (ok()) { const t = ac.currentTime; for (let i = 0; i < 4; i++) { tone('sawtooth', 440, 880, 0.35, 0.18, t + i * 0.7); tone('sawtooth', 880, 440, 0.3, 0.18, t + i * 0.7 + 0.35); } } },
     coin() { if (ok()) { const t = ac.currentTime; tone('square', 988, 0, 0.07, 0.15, t); tone('square', 1319, 0, 0.3, 0.15, t + 0.07); } },
+    launch() { if (ok()) { tone('sine', 220, 70, 0.25, 0.6); noise(0.2, 0.5, 'bandpass', 900, 300); } },
     beep() { if (ok()) tone('square', 660, 0, 0.1, 0.12); },
     over() { music('over'); },
   };
@@ -659,8 +708,9 @@ window.addEventListener('pagehide', () => togglePause(true));
 // =====================================================================
 // 5. TERRAIN / BACKGROUND (procedural, pre-rendered into 256px chunks)
 // =====================================================================
-const TT = { DEEP: 0, WATER: 1, SHALLOW: 2, SAND: 3, GRASS: 4, FOREST: 5, ROCK: 6, DSAND: 7, DUNE: 8, BALLAST: 9, DIRT: 10 };
-const TCOL = ['#1a3c88', '#2656b8', '#3a86d0', '#e6d28a', '#4f9a3a', '#2f6e2a', '#8a7658', '#e2b872', '#c8964e', '#6e6256', '#a08060'].map(rgb);
+const TT = { DEEP: 0, WATER: 1, SHALLOW: 2, SAND: 3, GRASS: 4, FOREST: 5, ROCK: 6, DSAND: 7, DUNE: 8, BALLAST: 9, DIRT: 10, COURT: 11, COURT_OUT: 12, LINE: 13, NET: 14, FENCE: 15, PATH: 16 };
+const TCOL = ['#1a3c88', '#2656b8', '#3a86d0', '#e6d28a', '#4f9a3a', '#2f6e2a', '#8a7658', '#e2b872', '#c8964e', '#6e6256', '#a08060',
+  '#3c6cb4', '#3f8a5a', '#f2f2ee', '#22252a', '#1c4030', '#b8ae9c'].map(rgb);
 const CHUNK = 256;
 let chunks = [], mapT = 3072, STG = null;
 
@@ -686,6 +736,25 @@ const STAGES = [
       if (v > 0.74) return TT.ROCK;
       const d = Math.sin((wy + x * 0.4) / 11 + v * 14);
       return d > 0.55 ? TT.DUNE : TT.DSAND;
+    } },
+  { name: 'TENNIS COURTS', sub: 'OPERATION MATCH POINT', seed: 53, T: 3072, scroll: 26, tennis: true,
+    // a row of hard courts, one every 384px (8 per loop, so the map tiles seamlessly)
+    field(x, wy) {
+      const ly = ((wy % 384) + 384) % 384;
+      const ln = (v, L) => v >= L - 1.5 && v < L + 0.5;            // 2px-wide line
+      if (x < 18 || x >= 222) return TT.GRASS;
+      if (ly < 12 || ly >= 372) return TT.PATH;
+      if (x < 20 || x >= 220 || ly < 14 || ly >= 370) return TT.FENCE;
+      if (ly >= 190 && ly < 194 && x >= 44 && x < 196) return (x < 48 || x >= 192) ? TT.NET : ly < 192 ? TT.NET : TT.LINE;
+      const inX = x >= 52 && x < 188, inY = ly >= 48 && ly < 338;
+      if (inX && inY) {
+        if (ln(ly, 48) || ln(ly, 336) || ln(x, 54) || ln(x, 186) || ln(x, 70) || ln(x, 170)) return TT.LINE;
+        if (x >= 70 && x < 170 && (ln(ly, 114) || ln(ly, 270))) return TT.LINE;
+        if (ln(x, 120) && ly >= 114 && ly < 272) return TT.LINE;
+        if (ln(x, 120) && (ly < 54 || ly >= 330)) return TT.LINE;   // centre marks
+        return TT.COURT;
+      }
+      return TT.COURT_OUT;
     } },
 ];
 const isWater = (t) => t <= TT.SHALLOW;
@@ -757,6 +826,32 @@ function renderChunk(k, g) {
         g.fillStyle = '#5a4430'; g.fillRect(bx + 3, by + 3, bw, bh);
         g.fillStyle = h < 0.3 ? '#d8b888' : '#c09868'; g.fillRect(bx + 1, by + 1, bw, bh);
         g.fillStyle = '#f0d8a8'; g.fillRect(bx + 1, by + 1, bw, 1);
+      }
+    }
+  }
+  if (STG.tennis) {
+    for (let c = 0; c < mapT / 384 + 1; c++) {
+      // "SKY ACE OPEN" painted behind each baseline
+      const ry = (k + 1) * CHUNK - (c * 384 + 36);
+      if (ry > -10 && ry < CHUNK) {
+        const str = 'SKY ACE OPEN', sx = 120 - str.length * 3;
+        g.fillStyle = '#e8f0e8';
+        [...str].forEach((ch, i) => FONT[ch].forEach((row, y) => {
+          for (let xx = 0; xx < 5; xx++) if ((row >> (4 - xx)) & 1) g.fillRect(sx + i * 6 + xx, ry + y, 1, 1);
+        }));
+      }
+      // benches beside the net
+      const by = (k + 1) * CHUNK - (c * 384 + 200);
+      if (by > -20 && by < CHUNK + 4) for (const bx of [26, 206]) {
+        g.fillStyle = '#5a3a22'; g.fillRect(bx, by, 8, 16); g.fillStyle = '#8a5a32'; g.fillRect(bx + 1, by + 1, 6, 14);
+      }
+    }
+    // stray tennis balls
+    for (let cy = 0; cy < CHUNK / 8; cy++) for (let cx = 3; cx < 27; cx++) {
+      const h = hash(cx, k * 32 + cy, 91);
+      if (h < 0.035) {
+        const px = cx * 8 + ((h * 400) | 0) % 6, py = cy * 8 + ((h * 900) | 0) % 6;
+        g.fillStyle = '#5a6a10'; g.fillRect(px, py + 1, 3, 2); g.fillStyle = '#d8f040'; g.fillRect(px, py, 3, 2); g.fillRect(px + 1, py - 1, 1, 1);
       }
     }
   }
@@ -1225,8 +1320,8 @@ function drawBombFx() {
 // 8d. BOSSES — body sprite + destructible parts (all parts = total HP)
 // part: [ox, oy, hp, gun, rate, gun2([name, rate], phase>=2), img, barrel]
 // =====================================================================
-const PART_HIT = { S: [6, 6], B: [9, 9], E: [7, 7], C: [7, 9], C2: [6, 5], C3: [8, 8] };
-const BAR_OFF = { S: 5, B: 7, H: 13 };
+const PART_HIT = { S: [6, 6], B: [9, 9], E: [7, 7], C: [7, 9], C2: [6, 5], C3: [8, 8], C4: [9, 6], C5: [15, 9] };
+const BAR_OFF = { S: 5, B: 7, H: 13, T: 12 };
 const BOSSDEF = [
   { name: "BATTLESHIP LEVIATHAN", ground: true, hw: 28, hh: 84, startY: -95,
     parts: [[0, -53, 160, 'fan5', 2.6, null, 'B', 'B'], [-16, -29, 70, 'aim3', 1.7, null, 'S', 'S'], [16, -29, 70, 'aim3', 1.9, null, 'S', 'S'],
@@ -1263,6 +1358,15 @@ const BOSSDEF = [
         if (p) { p.x = b.x + rand(-1, 1); p.y = b.y + 42; p.vx = rand(-8, 8); p.vy = rand(10, 30); p.max = p.life = 0.9; p.c = 4 + (Math.random() < 0.5 ? 1 : 0); p.big = 1; p.g = 0; }
       }
     } },
+  { name: 'BALL MACHINE DEUCE', ground: true, hw: 34, hh: 45, startY: -60,
+    // launcher fires FIGHTERS instead of tennis balls; the rest shoots tennis-ball bullets
+    parts: [[0, 28, 340, 'launch', 3.4, ['launch', 2.3], 'B', 'T'], [-23, 1, 90, 'tball5', 2.2, null, 'S', 'S'], [23, 1, 90, 'tball5', 2.4, null, 'S', 'S'],
+      [0, 0, 300, 'tring', 2.6, ['tspiral', 0.11], 'C4', ''], [0, -30, 220, 'taim', 1.7, null, 'C5', '']],
+    move(b, dt) {
+      const ty = 92 + (H - 320) * 0.2;
+      if (b.enter) { b.y += 45 * dt; if (b.y >= ty) { b.enter = false; b.t0 = b.t; } return; }
+      const t = b.t - b.t0; b.x = W / 2 + 48 * Math.sin(t * 0.5); b.y = ty + 12 * Math.sin(t * 0.8);
+    } },
 ];
 function spawnBoss() {
   const d = BOSSDEF[G.stage], m = (1 + G.loop * 0.45) * (firstRun() ? 0.82 : 1);   // stage 1 boss: -18% HP
@@ -1286,6 +1390,21 @@ function fireGun(name, p, x, y, b) {
     case 'ring': ring(x, y, 14 + G.loop * 4 + G.stage * 2, 62, 0, b.t); break;
     case 'spiral': p.sp += 0.33; for (let k = 0; k < 3; k++) eShot(x, y, p.sp + k * TAU / 3, 72, 2); return;
     case 'big': fan(x, y, p.ang, 5, 0.28, 62, 3); fan(x, y, p.ang, 4, 0.28, 88, 1); G.shake = 0.2; break;
+    case 'tball5': fan(x, y, p.ang, 5, 0.2, 82, 4); break;
+    case 'taim': fan(x, y, aimAng(x, y), 3, 0.15, 95, 4); break;
+    case 'tring': ring(x, y, 16 + G.loop * 4, 60, 4, b.t); break;
+    case 'tspiral': p.sp += 0.31; for (let k = 0; k < 3; k++) eShot(x, y, p.sp + k * TAU / 3, 70, 4); return;
+    case 'launch': {          // serve fighters instead of tennis balls!
+      const tx = x + Math.cos(p.ang) * 22, ty = y + Math.sin(p.ang) * 22, n = b.phase >= 2 ? 3 : 2;
+      for (let i = 0; i < n; i++) {
+        const e = spawnEnemy(Math.random() < 0.25 ? 'rf' : 'f'); if (!e) break;
+        const a = p.ang + (i - (n - 1) / 2) * 0.35;
+        e.x = tx; e.y = ty; e.vx = Math.cos(a) * 125; e.vy = Math.sin(a) * 125; e.path = 4; e.ang = a; e.delay = i * 0.12;
+        if (Math.random() < 0.4) e.fireT = rand(0.4, 0.9);
+      }
+      spark(tx, ty, 10, 70, 4, 5, true); G.shake = 0.15; SFX.launch();
+      return;
+    }
     case 'stream':
       if (p.burst <= 0) p.burst = 6;
       eShot(x, y, aimAng(x, y), 115, 0);
@@ -1378,7 +1497,7 @@ function drawBoss(b, shadow) {
     const im = p.img[0] === 'C' ? SPR.core[p.img] : p.img === 'B' ? SPR.turB : p.img === 'E' ? SPR.turE : SPR.turS;
     blit(p.flash > 0 ? im.w : im.n, px, py);
     if (p.img === 'E') drawProps(px, py + 7, [0], 15);
-    if (p.gun === 'big' && p.cd < 0.7 && !b.enter && ((b.t * 20) | 0) % 2) {      // main cannon charge glow
+    if ((p.gun === 'big' || p.gun === 'launch') && p.cd < 0.7 && !b.enter && ((b.t * 20) | 0) % 2) {      // main cannon charge glow
       const tx = px + Math.cos(p.ang) * 26, ty = py + Math.sin(p.ang) * 26;
       ctx.drawImage(SPR.expl[1], R(tx - 8) + shx, R(ty - 8) + shy, 16, 16);
     }
@@ -1422,6 +1541,18 @@ const SCRIPTS = [
     [51, 'ground', 't', 70, 4], [52, 'ground', 't', 180, 4], [54, 'sine', 120, 9, 90, 1], [57, 'bomber', 70], [58, 'bomber', 170],
     [60, 'ground', 'g', 120, 3], [62, 'line', 60, 7, 0, 1], [62.5, 'line', 180, 7], [65, 'dive', 120, 9], [67, 'ground', 't', 120, 5],
     [69, 'vee', 120, 9], [72, 'side', 1, 6, 40, 1], [72.5, 'side', 0, 6, 70],
+  ],
+  [ // STAGE 4 — tennis courts: everything at once, then the ball machine
+    [1.5, 'line', 60, 6, 0, 1], [2.5, 'ground', 'g', 180, 2], [4, 'sine', 120, 6, 60], [6, 'ground', 't', 60, 3], [7, 'side', 1, 6, 40, 1],
+    [8, 'side', 0, 6, 60], [10, 'bomber', 80], [10.5, 'bomber', 160], [12, 'ground', 'g', 120, 3], [14, 'dive', 120, 8],
+    [16, 'ground', 't', 180, 4], [17, 'vee', 70, 7], [18, 'vee', 170, 7], [20, 'stop', 120, 6, 60], [22, 'ground', 'g', 60, 2],
+    [22, 'ground', 'g', 180, 2], [24, 'bomber', 120], [26, 'line', 40, 7, 2, 1], [26.5, 'line', 200, 7, 2], [28, 'ground', 't', 120, 5],
+    [30, 'sine', 80, 7, 50, 1], [31, 'sine', 160, 7, 50], [33, 'bomber', 60], [34, 'bomber', 180], [36, 'ground', 'g', 120, 3],
+    [38, 'side', 1, 7, 30, 1], [38.5, 'side', 0, 7, 50], [40, 'dive', 80, 6], [40.5, 'dive', 170, 6], [42, 'ground', 't', 70, 4],
+    [43, 'ground', 't', 180, 4], [45, 'stop', 120, 7, 50], [47, 'bomber', 120], [49, 'ground', 'g', 60, 2], [49, 'ground', 'g', 180, 2],
+    [51, 'line', 120, 10, 0, 1], [54, 'vee', 120, 9], [56, 'bomber', 70], [57, 'bomber', 170], [59, 'ground', 't', 120, 5],
+    [61, 'sine', 120, 9, 90, 1], [64, 'dive', 120, 9], [66, 'ground', 'g', 120, 3], [68, 'side', 1, 7, 40, 1], [68.5, 'side', 0, 7, 70],
+    [71, 'line', 60, 7, 2], [71.5, 'line', 180, 7, 2, 1],
   ],
 ];
 function runScript(dt) {
