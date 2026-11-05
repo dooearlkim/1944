@@ -465,7 +465,14 @@ const G = {
 const P = { x: 120, y: 280, alive: true, inv: 0, level: 1, fireT: 0, respawnT: 0, prop: 0, enterT: 0, hitR: 2 };
 try { G.hi = parseInt(localStorage.getItem('skyace1944_hi') || '0', 10) || 0; } catch (e) { G.hi = 0; }
 function saveHi() { try { localStorage.setItem('skyace1944_hi', String(G.hi)); } catch (e) { /* ignore */ } }
-function diff() { return 1 + G.stage * 0.12 + G.loop * 0.35; }
+// Difficulty ramps up *within* each stage: easy start -> harder before the boss.
+// stage 1: 0.55 -> 0.90, stage 2: 0.78 -> 1.13, stage 3: 1.00 -> 1.35, loop 2+: +0.35
+function diff() {
+  const prog = G.bossState ? 1 : clamp(G.stageT / 70, 0, 1);
+  return 0.55 + G.stage * 0.225 + 0.35 * prog + G.loop * 0.35;
+}
+const firstRun = () => G.stage === 0 && G.loop === 0;
+const grace = () => firstRun() && G.stageT < 20;      // stage 1 opening: fighters hold fire
 
 // =====================================================================
 // 3b. AUDIO — Web Audio synth SFX + step-sequenced chiptune BGM
@@ -858,13 +865,13 @@ const EUPD = {
       case 3: if (e.t > e.p1) { e.vy += 150 * dt; e.vx *= 1 - 1.3 * dt; } break;              // side entry, curve down
       case 4: break;                                                                         // straight
       case 5: if (e.y > e.p1 && e.st === 0) { e.st = 1; e.p2 = e.t; }                           // stop & shoot & leave
-        if (e.st === 1) { e.vy *= 1 - 4 * dt; if (e.t - e.p2 > 1.0) { e.st = 2; if (canFire(e)) fan(e.x, e.y, aimAng(e.x, e.y), 3, 0.22, 80, 0); } }
+        if (e.st === 1) { e.vy *= 1 - 4 * dt; if (e.t - e.p2 > 1.0) { e.st = 2; if (canFire(e) && !grace()) fan(e.x, e.y, aimAng(e.x, e.y), 3, 0.22, 80, 0); } }
         if (e.st === 2) e.vy += 160 * dt; break;
     }
     if (e.path !== 1) e.x += e.vx * dt;
     e.y += e.vy * dt;
     if (Math.abs(e.vx) + Math.abs(e.vy) > 5) e.ang = Math.atan2(e.vy, e.vx);
-    if (e.fireT > 0) { e.fireT -= dt; if (e.fireT <= 0 && canFire(e)) eShot(e.x, e.y, aimAng(e.x, e.y), 85, 0); }
+    if (e.fireT > 0) { e.fireT -= dt; if (e.fireT <= 0 && canFire(e) && !grace()) eShot(e.x, e.y, aimAng(e.x, e.y), 85, 0); }
     if (e.t > 0.8 && (e.y > H + 20 || e.y < -40 || e.x < -40 || e.x > W + 40)) e.alive = false;
   },
 };
@@ -879,7 +886,7 @@ EUPD.b = (e, dt) => {                       // medium bomber: descend, hover & s
     e.cd = 1.5 / Math.sqrt(diff());
     if (canFire(e)) {
       if (e.cd2++ % 2) fan(e.x, e.y + 12, aimAng(e.x, e.y + 12), 5, 0.2, 78, 1);
-      else ring(e.x, e.y, 10 + G.stage * 2, 58, 0, e.t);
+      else ring(e.x, e.y, firstRun() ? 7 : 10 + G.stage * 2, 58, 0, e.t);
       SFX.eshot();
     }
   }
@@ -1258,7 +1265,7 @@ const BOSSDEF = [
     } },
 ];
 function spawnBoss() {
-  const d = BOSSDEF[G.stage], m = 1 + G.loop * 0.45;
+  const d = BOSSDEF[G.stage], m = (1 + G.loop * 0.45) * (firstRun() ? 0.82 : 1);   // stage 1 boss: -18% HP
   const b = { def: d, x: W / 2, y: d.startY, t: 0, t0: 0, enter: true, phase: 1, parts: [], ground: d.ground,
     hw: d.hw, hh: d.hh, name: d.name, img: SPR.boss[G.stage], dying: false, dieT: 0, max: 0, hp: 0 };
   for (const q of d.parts) {
@@ -1308,7 +1315,7 @@ function updateBoss(dt) {
   if (b.enter) return;
   const fr = b.hp / b.max;
   b.phase = fr > 0.6 ? 1 : fr > 0.3 ? 2 : 3;
-  const rm = (b.phase === 3 ? 0.62 : b.phase === 2 ? 0.8 : 1) / Math.sqrt(diff());
+  const rm = (b.phase === 3 ? 0.62 : b.phase === 2 ? 0.8 : 1) / Math.sqrt(diff()) * (firstRun() ? 1.2 : 1);  // stage 1 boss fires less often
   for (const p of b.parts) {
     const px = b.x + p.ox, py = b.y + p.oy;
     if (!p.alive) {
