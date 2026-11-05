@@ -71,22 +71,22 @@ npx serve -l tcp://0.0.0.0:8000
 
 ## 3. GitHub Pages로 배포 (어디서나 HTTPS로 접속 + PWA)
 
-1. GitHub에서 새 저장소를 만듭니다. 예: `sky-ace-1944` (Public)
+1. GitHub에서 새 저장소를 만듭니다. 예: `1944` (Public)
 2. 이 폴더를 올립니다.
    ```bash
-   cd sky-ace-1944
+   cd 1944
    git init
    git add .
    git commit -m "SKY ACE 1944"
    git branch -M main
-   git remote add origin https://github.com/<내아이디>/sky-ace-1944.git
+   git remote add origin https://github.com/<내아이디>/1944.git
    git push -u origin main
    ```
    (git 없이 GitHub 웹에서 **Add file → Upload files**로 파일을 끌어다 놓아도 됩니다.)
 3. 저장소의 **Settings → Pages**로 갑니다.
 4. **Build and deployment → Source**를 `Deploy from a branch`로 두고,
    Branch는 `main`, 폴더는 `/ (root)`로 고른 뒤 **Save**를 누릅니다.
-5. 1~2분 뒤 `https://<내아이디>.github.io/sky-ace-1944/` 에서 실행됩니다.
+5. 1~2분 뒤 `https://<내아이디>.github.io/1944/` 에서 실행됩니다.
 6. 코드를 고친 뒤 다시 push하면 자동으로 재배포됩니다.
    이때 `sw.js`의 `VERSION` 값(예: `skyace-v2`)을 올려야 휴대폰의 캐시도 갱신됩니다.
 
